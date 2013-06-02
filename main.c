@@ -1,5 +1,10 @@
 //*****************************************************************************
-//
+// Robot cutre con Launchpad MSP430g2553
+// L298 en P2
+// Dos diodos IR y un diodo receptor en P1.4 VCC P1.5 VIN
+// 10DOF I2c
+// Módulo bluetooth HC06 en RX/TX 9600 8N1
+// Dos motores DC de una impresora de impacto
 //
 //*****************************************************************************
 
@@ -16,7 +21,7 @@
 
 //*****************************************************************************
 //
-//
+// Definición de variables
 //*****************************************************************************
 
 unsigned char recibido;
@@ -35,27 +40,27 @@ int estado=0;
 
 //*****************************************************************************
 //
-//
+// Definición de funciones
 //*****************************************************************************
 
 int compas(void);
 
 //*****************************************************************************
-// 1 si hay obstáculo
-//
+// 
+// Devuelve un 1 si encuentra un obstáculo
 //*****************************************************************************
 
 
 int vision(void) {
 
 	ADC10CTL0 |= ENC + ADC10SC;             // Sampling and conversion start
-	__bis_SR_register(LPM0_bits + GIE);        // LPM0 with interrupts enabled
+	__bis_SR_register(LPM0_bits + GIE);     // LPM0 with interrupts enabled
 	ambiente = ADC10MEM;
 
 	P1OUT |= BIT4;				// Encendemos LEDs IR
 	delay(1000);				// Estabilizando...
 	ADC10CTL0 |= ENC + ADC10SC;             // Sampling and conversion start
-	__bis_SR_register(LPM0_bits + GIE);        // LPM0 with interrupts enabled
+	__bis_SR_register(LPM0_bits + GIE);     // LPM0 with interrupts enabled
 	P1OUT &= ~BIT4;				// Apagamos LEDs IR
 	lectura = ADC10MEM;
 	distancia = lectura - ambiente;
@@ -69,8 +74,9 @@ int vision(void) {
 }		
 
 //*****************************************************************************
-// 1 si hay obstáculo
-//
+// 
+// El robot se mueve sólo comprobando si hay obstáculos mediante IR y 
+// emplenado el compás y el acelerómetro para comprobar si se atasca.
 //*****************************************************************************
 
 void autonomo(void) {
@@ -139,7 +145,7 @@ int cambio;
 
 //*****************************************************************************
 //
-//
+// Orienta a la posición fin mediante PID
 //*****************************************************************************
 
 void orienta(void)
@@ -193,7 +199,7 @@ struct PID_DATA pidData1;
 
 //*****************************************************************************
 //
-//
+// Función principal
 //*****************************************************************************
 
 
@@ -273,7 +279,7 @@ int main(void)
 
 //*****************************************************************************
 //
-//
+// Pulsación S2
 //*****************************************************************************
 
 // This handler runs when Switch S2 is pressed.
@@ -293,7 +299,7 @@ void Port_1(void)
 
 //*****************************************************************************
 //
-//
+// Recepción de caracteres por bluetooth
 //*****************************************************************************
 
 __attribute__((interrupt(USCIAB0RX_VECTOR))) 
@@ -311,7 +317,7 @@ void USCI0RX_ISR (void)
 
 //*****************************************************************************
 //
-//
+// I2C RX/TX
 //*****************************************************************************
 
 __attribute__((interrupt(USCIAB0TX_VECTOR)))
@@ -365,7 +371,7 @@ void USCI0TX_ISR (void)
 
 //*****************************************************************************
 //
-//
+// ADC10 
 //*****************************************************************************
 
 __attribute__((interrupt(ADC10_VECTOR)))
