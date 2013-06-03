@@ -377,5 +377,19 @@ void USCI0TX_ISR (void)
 __attribute__((interrupt(ADC10_VECTOR)))
 void ADC10_ISR (void)
 {
-		__bic_SR_register_on_exit(LPM0_bits);        // Return to active mode }
+		__bic_SR_register_on_exit(LPM0_bits);        // Return to active mode 
+}
+
+
+//*****************************************************************************
+//
+// Timer
+//*****************************************************************************
+
+__attribute__((interrupt(TIMER0_A0_VECTOR)))
+void TIMER0_A0_ISR(void)
+{
+
+		__bic_SR_register_on_exit(LPM0_bits);        // Return to active mode 
+
 }

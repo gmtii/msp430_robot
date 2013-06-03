@@ -3,12 +3,14 @@
 #include "comun.h"
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//*****************************************************************************
+//
+// Inicialización del sistema
+//*****************************************************************************
 
 void init( void ) {
 
-	// Serial
+	// Puerto serie : 16mhz/9600=683
 
 	UCA0CTL1 |= UCSWRST;
 	UCA0CTL1 = UCSSEL_2 + UCSWRST;
@@ -17,7 +19,7 @@ void init( void ) {
 	UCA0CTL1 &= ~UCSWRST;
 
 
-	// I2C
+	// I2C 100 kHz Master
 
 	UCB0CTL1 |= UCSWRST;
 	UCB0CTL0 = UCMST + UCMODE_3 + UCSYNC;
@@ -32,30 +34,32 @@ void init( void ) {
 	P1IE |= BIT3;                       // Switch S2 triggers an interrupt
 	P1IES |= BIT3;                      // on falling edge
           
-	/* Port 1 Port Select Register */
+	/* Habilita funciones puerto 1: RX,TX,ADC CH5,SDA,SCL */
 	P1SEL = BIT1 + BIT2 + BIT5 + BIT6 + BIT7;
-	/* Port 1 Port Select 2 Register */
+	/* Habilita funciones puerto 1: RX,TX,ADC CH5,SDA,SCL */
 	P1SEL2 = BIT1 + BIT2 + BIT6 + BIT7;
 
-	P1DIR |= BIT0 + BIT4 ;                
+	/* Puertos P1.0 y 4 de salida */
+	
+	P1DIR |= BIT0 + BIT4 ;
+	/* Todos los puertos P2 de salida*/
+		
 	P2DIR |= BIT0 + BIT1 + BIT2 + BIT3 + BIT4 + BIT5;      
+	
+	/* Configura módulo ADC10 para puerto P1.5 */
 
-	ADC10CTL1 = INCH_5 + ADC10DIV_3 ;        		// Channel 5, ADC10CLK/4
+	ADC10CTL1 = INCH_5 + ADC10DIV_3 ;        				// Channel 5, ADC10CLK/4
 	ADC10CTL0 = SREF_0 + ADC10SHT_3 + ADC10ON + ADC10IE;    //Vcc & Vss as reference
-	ADC10AE0 |= BIT5;                        		//P1.5 ADC option  
+	ADC10AE0 |= BIT5;                        				//P1.5 ADC option  
 
 	IE2 |= UCA0RXIE + ADC10IE;
 
-
-
-
-
-
-
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//*****************************************************************************
+//
+// Funciones de delay por software
+//*****************************************************************************
 
 
 void delay(unsigned long d) {
@@ -65,6 +69,44 @@ void delay(unsigned long d) {
   }
 }
 
+//*****************************************************************************
+//
+// Funciones de delay por interrupción
+//*****************************************************************************
+
+void delay_timer(int tiempo)
+{
+
+	/* Configura el timer0 */
+	
+	 /* 
+     * TA0CCTL0, Capture/Compare Control Register 0
+     * 
+     * CM_0 -- No Capture
+     * CCIS_0 -- CCIxA
+     * ~SCS -- Asynchronous Capture
+     * ~SCCI -- Latched capture signal (read)
+     * ~CAP -- Compare mode
+     * OUTMOD_0 -- PWM output mode: 0 - OUT bit value
+     * 
+     * Note: ~<BIT> indicates that <BIT> has value zero
+     */
+    TA0CCTL0 = CM_0 + CCIS_0 + OUTMOD_0 + CCIE;
+
+    /* TA0CCR0, Timer_A Capture/Compare Register 0 */
+    TA0CCR0 = tiempo;
+
+    /* 
+     * TA0CTL, Timer_A3 Control Register
+     * 
+     * TASSEL_1 -- ACLK
+     * ID_0 -- Divider - /1
+     * MC_1 -- Up Mode
+     */
+    TA0CTL = TASSEL_1 + ID_0 + MC_1;
+	
+	
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

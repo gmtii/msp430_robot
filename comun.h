@@ -17,7 +17,7 @@
 
 #define ASCII_ESC 27
 
-
+#define CPUOFF 	__bis_SR_register(LPM0_bits + GIE);
 
 struct
 {
