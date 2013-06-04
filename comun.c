@@ -104,7 +104,10 @@ void delay_timer(int tiempo)
      * MC_1 -- Up Mode
      */
     TA0CTL = TASSEL_1 + ID_0 + MC_1;
-	
+
+	__bis_SR_register(LPM0_bits + GIE);
+	__no_operation(); 
+
 	
 }
 
@@ -179,7 +182,7 @@ void avanza(long tiempo) {
 	arranca_motores();
 	LmotorFWD();
 	RmotorFWD();
-	delay(tiempo);
+	delay_timer(tiempo);			
 	para_motores();
 }
 
@@ -189,7 +192,7 @@ void atras(long tiempo) {
 	arranca_motores();
 	LmotorREV();
 	RmotorREV();
-	delay(tiempo);
+	delay_timer(tiempo);			
 	para_motores();
 }
 
@@ -199,7 +202,7 @@ void derecha(long tiempo) {
 	arranca_motores();
 	LmotorREV();
 	RmotorFWD();
-	delay(tiempo);
+	delay_timer(tiempo);		
 	para_motores();
 }
 
@@ -209,7 +212,7 @@ void izquierda(long tiempo) {
 	arranca_motores();
 	LmotorFWD();
 	RmotorREV();
-	delay(tiempo);
+	delay_timer(tiempo);		
 	para_motores();
 }
 

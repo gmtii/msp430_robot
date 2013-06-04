@@ -17,7 +17,7 @@
 
 #define ASCII_ESC 27
 
-#define CPUOFF 	__bis_SR_register(LPM0_bits + GIE);
+
 
 struct
 {
@@ -35,6 +35,7 @@ struct
 } modo;
 
 void delay(unsigned long d);
+void delay_timer(int tiempo);
 void TXString( char* string );
 
 void LmotorON(void);    

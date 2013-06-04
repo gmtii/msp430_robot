@@ -14,9 +14,15 @@
 #include "i2c.h"
 #include "pid.h"
 #include "10dof.h"
- 
-#define inercia		500000
-#define inercia_giro	250000
+
+#define s1		32768		// 1 s.
+#define ms750		(s1/4)*3	// 750 ms.
+#define ms500		s1/2 		// 500 ms.
+#define inercia		s1/4		// 250 ms.
+#define inercia_giro	s1/8		// 125 ms.
+#define inercia_autonomo	s1/16	// 62.5 ms.
+
+
 
 
 //*****************************************************************************
@@ -58,7 +64,7 @@ int vision(void) {
 	ambiente = ADC10MEM;
 
 	P1OUT |= BIT4;				// Encendemos LEDs IR
-	delay(1000);				// Estabilizando...
+	delay_timer(250);			// Estabilizando alimentación.
 	ADC10CTL0 |= ENC + ADC10SC;             // Sampling and conversion start
 	__bis_SR_register(LPM0_bits + GIE);     // LPM0 with interrupts enabled
 	P1OUT &= ~BIT4;				// Apagamos LEDs IR
@@ -67,7 +73,7 @@ int vision(void) {
 	//sprintf(temp, "Distancia: %i, Lectura: %i, Ambiente: %i", distancia,lectura,ambiente);
 	//TXString(temp); 
 
-	if ( distancia < 275)
+	if ( distancia < 275)			// 275 calibrado a mano en interiores.
 	return 1;
 
 	return 0;
@@ -93,47 +99,47 @@ int cambio;
 
 
 		P1OUT &= ~BIT0;
-		punto1=compas();
-		avanza(75000);	
+		punto1=compas();				// marca el punto inicial
+		avanza(inercia_autonomo);			// avanza un poco
 
-		if ( vision () ) 
+		if ( vision () ) 				// hay obstáculo?
 			{
-			bloqueo=0;
-			P1OUT |= BIT0;
-			atras(999999);
-				if (cuenta<4) 
+			bloqueo=0;				// reinicia contador
+			P1OUT |= BIT0;				// enciende LED
+			atras(ms500);				// marcha atras 500ms
+				if (cuenta<4) 			// he girado <4 veces a la izquierda?
 				{
-				izquierda(500000);
-				cuenta++; 
+				izquierda(inercia);		// sigo girando		
+				cuenta++; 			
 				}
-				else 
+				else 				// ya he rotado y no hay salida
 				{
-				derecha(500000);
+				derecha(inercia);		// giro al lado contrario 4 veces más
 				cuenta++;
 					if (cuenta>6)
-					cuenta=0;
+					cuenta=0;		// reiniciamos cuenta
 				}
 			}
 
 
-		delay(25000);
+		delay_timer(inercia);				// retraso para permitir desplazamiento
 
 		punto2=compas();
-		cambio=punto2-punto1;
+		cambio=punto2-punto1;				// marco punto2
+	
+			if (cambio==0 && acelerometro()==0  )	// si no ha variado el rumbo y el acel=0 estamos atascados
+			bloqueo++;				
 
-			if (cambio==0 && acelerometro()==0  )
-			bloqueo++;
-
-		if (bloqueo>15)
+		if (bloqueo>8)					// 8 veces bloqueo, tenemos que salir
 			{
 			P1OUT |= BIT0;
-			bloqueo=0;
-			atras(999999);
+			bloqueo=0;	
+			atras(inercia);				// atras fuerte 500ms.
 
 				if (movimiento.izquierda==TRUE) 
-				derecha(999999);
+				derecha(ms500);			// giro completo si veníamos de la izquierda a la derecha
 				else
-				izquierda(999999);
+				izquierda(ms500);		// si veníamos de la derecha, giro a la izquierda
 			}
 		
 			
@@ -175,10 +181,10 @@ struct PID_DATA pidData1;
 		valor_pid = pid_Controller(fin, actual, &pidData1); 
 	
 		if (valor_pid <0) 
-		derecha(100000);
+		derecha(inercia);
 	
 		if (valor_pid >0)
-		izquierda(100000);
+		izquierda(inercia);
 
 		para_motores();
 
@@ -186,7 +192,7 @@ struct PID_DATA pidData1;
 
 		sprintf(temp, "%i;%i;%i;%i", fin,actual,valor_pid,error);
 		TXString(temp);
-		delay(50000);
+		delay_timer(1000);
 	}
 
 	TXString("Fin PID...");
@@ -222,36 +228,35 @@ int main(void)
 
 	para_motores();
 	frena();
-		
+	
 	while(1)
 	{
-	__bis_SR_register(LPM0_bits + GIE);
-    	__no_operation(); 
+
 
 		P1OUT |= BIT0;
 
-			if (recibido == 65)					
-				avanza(inercia);
-			else if (recibido == 66)
-				atras(inercia);
-			else if (recibido == 68)
+			if (recibido == 65)					// AVANZA				
+				avanza(ms500);
+			else if (recibido == 66)				// ATRAS
+				atras(ms500);
+			else if (recibido == 68)				// IZQUIERDA
 				izquierda(inercia_giro);
-			else if (recibido == 67)
-				derecha(inercia_giro);
-			else if	(recibido == 32)
+			else if (recibido == 67)				// DERECHA
+				derecha(inercia_giro);				
+			else if	(recibido == 32)				// DESACTIVA MOTORES
 				frena();
-			else if (recibido == 'r') {
+			else if (recibido == 'r') {				// VER RUMBO
 				sprintf(temp, "Compas: %i", compas());
 				TXString(temp); 
 				}
 
-			else if (recibido == 'o')
+			else if (recibido == 'o')				// Orienta hacia heading_fin mediante PID
 				orienta();
 
-			else if (recibido == 's')
+			else if (recibido == 's')				// desactiva el modo autónomo
 				modo.autonomo==FALSE;
 	
-			else if (recibido == 'd') {
+			else if (recibido == 'd') {				// modo debug sensores
 				modo.debug=TRUE;
 				sprintf(temp,"%c[2J", ASCII_ESC);
 				TXString(temp);
@@ -263,14 +268,18 @@ int main(void)
 				modo.debug=FALSE;
 				}
 
-			else if (recibido == 'a') {
+			else if (recibido == 'a') {				// modo autónomo
 				modo.autonomo=TRUE;
 				autonomo();
 				}	
 			
 				
 		P1OUT &= ~BIT0;
+
+	__bis_SR_register(LPM0_bits + GIE);
+    	__no_operation(); 
 	}
+
 
 	return 0;
 
@@ -289,12 +298,12 @@ void Port_1(void)
                             
 	TXString("* * * S2 * * * ");
 	//para_motores();
-	delay(500000);
-	recibido='a';
-	modo.autonomo=TRUE;
-	P1IFG &= ~BIT3; 
+	delay(500000);					// delay por software
+	recibido='a';					// selecciona modo autónomo
+	modo.autonomo=TRUE;				// habilita modo
+	P1IFG &= ~BIT3; 				// limpia IF
 
-		__bic_SR_register_on_exit(LPM0_bits);
+	__bic_SR_register_on_exit(LPM0_bits);		// Activa CPU y vuelve a modo activo
 }
 
 //*****************************************************************************
@@ -310,7 +319,7 @@ void USCI0RX_ISR (void)
 	//while (!(IFG2&UCA0TXIFG));                
 	//UCA0TXBUF = recibido;  
 
-	__bic_SR_register_on_exit(LPM0_bits);
+	__bic_SR_register_on_exit(LPM0_bits);		// Activa CPU y vuelve a modo activo
 
 
 }
@@ -390,7 +399,8 @@ __attribute__((interrupt(TIMER0_A0_VECTOR)))
 void TIMER0_A0_ISR(void)
 {
 
-	TA0CCTL0 &= ~CCIE;							 // Deshabilita interrupcción por CCIE
-	__bic_SR_register_on_exit(LPM0_bits);        // Activa CPU y vuelve a modo activo
+	P1OUT ^= BIT0;				// XOR BIT0
+	TA0CCTL0 &= ~CCIE;			// Deshabilita interrupcción por CCIE
+	__bic_SR_register_on_exit(LPM0_bits);   // Activa CPU y vuelve a modo activo
 
 }
