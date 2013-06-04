@@ -9,8 +9,6 @@
 #define IN3		BIT4
 #define IN4		BIT5
 
-#define HMC5883L_ADDR	0x1E
-
 #define bool unsigned char
 #define TRUE 1
 #define FALSE 0
@@ -25,7 +23,6 @@ struct
   bool atras :1;
   bool derecha :1;
   bool izquierda :1;
-  bool autonomo :1;
 } movimiento;
 
 struct
@@ -59,8 +56,5 @@ void para_motores(void);
 void frena(void);
 void RmotorBRAKE(void);
 void LmotorBRAKE(void);
-
-void itoa(int n, char s[]);
-void reverse(char s[]);
 
 #endif

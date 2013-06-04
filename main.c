@@ -93,8 +93,6 @@ int punto1;
 int punto2;
 int cambio;
 
-
-
 	while (modo.autonomo==TRUE) {
 
 
@@ -116,13 +114,12 @@ int cambio;
 				{
 				derecha(inercia);		// giro al lado contrario 4 veces más
 				cuenta++;
-					if (cuenta>6)
+					if (cuenta>8)
 					cuenta=0;		// reiniciamos cuenta
 				}
 			}
-
-
-		delay_timer(inercia);				// retraso para permitir desplazamiento
+		//else
+		delay_timer(1000);				// retraso para permitir desplazamiento
 
 		punto2=compas();
 		cambio=punto2-punto1;				// marco punto2
@@ -130,7 +127,7 @@ int cambio;
 			if (cambio==0 && acelerometro()==0  )	// si no ha variado el rumbo y el acel=0 estamos atascados
 			bloqueo++;				
 
-		if (bloqueo>8)					// 8 veces bloqueo, tenemos que salir
+		if (bloqueo>5)					// 8 veces bloqueo, tenemos que salir
 			{
 			P1OUT |= BIT0;
 			bloqueo=0;	
@@ -216,12 +213,12 @@ int main(void)
 	BCSCTL1 = CALBC1_16MHZ;       /* Set DCO to 16MHz */
 	DCOCTL =  CALDCO_16MHZ;
 
+	init();
+
 	sprintf(temp,"%c[2J", ASCII_ESC);
 	TXString(temp);
 	sprintf(temp,"%c[H", ASCII_ESC);
 	TXString(temp);
-
-	init();
 	TXString("Hola mundo! - ROBOTIJO MSP430G2553 10DOF CUTRE");
 	inicia_sensores();
 	TXString("Sensores I2C Ok!");
@@ -297,7 +294,7 @@ void Port_1(void)
 {
                             
 	TXString("* * * S2 * * * ");
-	//para_motores();
+	para_motores();
 	delay(500000);					// delay por software
 	recibido='a';					// selecciona modo autónomo
 	modo.autonomo=TRUE;				// habilita modo
@@ -386,7 +383,7 @@ void USCI0TX_ISR (void)
 __attribute__((interrupt(ADC10_VECTOR)))
 void ADC10_ISR (void)
 {
-		__bic_SR_register_on_exit(LPM0_bits);        // Activa CPU y vuelve a modo activo
+	__bic_SR_register_on_exit(LPM0_bits);	// Activa CPU y vuelve a modo activo
 }
 
 

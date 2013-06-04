@@ -120,8 +120,8 @@ int acelerometro(void) {
 	sprintf(temp, "Acel: X: %i      Y: %i      Z: %i       ", x,y,z);
 	TXString(temp);
 	}
-
-	if (x<4 && x>-4)
+	
+	if (x<7 && x>-7)
 	return 0;
 	else
 	return 1;

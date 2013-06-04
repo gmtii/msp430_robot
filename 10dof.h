@@ -1,5 +1,5 @@
 #define BMP085_ADDR        	0x77
-#define HMC5883_ADDR		0x1E
+#define HMC5883L_ADDR		0x1E
 #define L3G4200D_ADDR		0x69
 #define ADXL345_ADDR		0x53
 
